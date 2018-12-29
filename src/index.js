@@ -1,12 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
+import LineChart from './LineChart';
 import * as serviceWorker from './serviceWorker';
+import {randomSeries} from './serie'
 
 ReactDOM.render(
-    <App
-        type='line'
+    <LineChart
+        lines={[
+            {data: randomSeries(123532) },
+            {data: randomSeries(123532) }
+        ]}
         width={window.innerWidth}
         height={window.innerHeight-3}
     />
