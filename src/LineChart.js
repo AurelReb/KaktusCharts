@@ -17,6 +17,10 @@ class LineChart extends Component {
             },
             max_data_x: max_x,
             min_data_x: min_x,
+            display_max_x: max_x - 1/3 * (max_x - min_x),
+            display_min_x: min_x + 1/3 * (max_x - min_x),
+            data: null,
+            dragging: false,
         }
     }
 
@@ -34,7 +38,7 @@ class LineChart extends Component {
         let {width, color, alpha} = this.state.stroke
         this.lines = new Pixi.Graphics()
         this.lines.lineStyle(width, color, alpha)
-        this.lineChart(0, 0, this.app.width, this.app.height * 5/6, this.state.min_data_x, this.state.max_data_x, this.props.lines)
+        this.lineChart(0, 0, this.app.width, this.app.height * 5/6, this.state.display_min_x, this.state.display_max_x, this.props.lines)
         this.stage.addChild(this.lines)
     }
 
@@ -42,19 +46,49 @@ class LineChart extends Component {
         let {width, color, alpha} = this.state.stroke
         this.traveller = new Pixi.Graphics()
         this.traveller.lineStyle(width, color, alpha)
-        this.lineChart(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.min_data_x, this.state.max_data_x, [this.props.lines[0]])
-        this.drawTraveller(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, 300, 100)
+        this.traveller.interactive = true
+        this.traveller.on('mousedown', event => this.onDragStart(event))
+                        .on('touchstart', event => this.onDragStart(event))
+                        .on('mouseup', () => this.onDragEnd())
+                        .on('mouseupoutside', () => this.onDragEnd())
+                        .on('touchend', () => this.onDragEnd())
+                        .on('touchendoutside', () => this.onDragEnd())
+                        .on('mousemove', () => this.onDragMove())
+                        .on('touchmove', () => this.onDragMove());
+
+        this.lineChart(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.min_data_x, 1700123529, [this.props.lines[0], ])
+        this.drawTraveller(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.display_min_x, this.state.display_max_x)
         this.stage.addChild(this.traveller)
     }
 
-    drawTraveller = (x, y, width, height, traveller_x, traveller_size) => {
+    onDragStart(event) {
+        console.log("start")
+        this.setState({data: event.data, dragging: true})
+    }
+
+    onDragEnd() {
+        console.log("end")
+        this.setState({data: null, dragging: false})
+    }
+
+    onDragMove() {
+        console.log("move!")
+        if (this.state.dragging) {
+            var newPosition = this.state.data.width;
+            this.setState({display_min_x: newPosition.x}) // a compléter!
+            this.drawTraveller(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.display_min_x, this.state.display_max_x)
+        }
+    }
+
+
+    drawTraveller = (x, y, width, height, from_x, to_x) => {
         this.traveller.beginFill(0xAAAAAA, 0.1);
 
-        // set the line style to have a width of 5 and set the color to red
         this.traveller.lineStyle(3, 0x000000);
-
+        let multip = width / Math.abs(this.state.max_data_x - this.state.min_data_x)
+        console.log(multip * Math.abs(from_x - to_x))
         // draw a rectangle
-        this.traveller.drawRect(traveller_x, y, traveller_x, height);
+        this.traveller.drawRect(multip * Math.abs(this.state.min_data_x - from_x), y, multip * Math.abs(from_x - to_x), height);
     }
 
     lineChart = (pos_x, pos_y, width, height, from_x, to_x, lines) => {
@@ -73,31 +107,12 @@ class LineChart extends Component {
                     to_index = i
             }
             console.log(from_index, to_index)
-            return {...line, data:line.data.splice(from_index, to_index)}
+            return {...line, data:line.data.slice(from_index, to_index)}
         })
-        var max_x = cropped_lines[0].data[0][0]
-        var max_y = cropped_lines[0].data[0][1]
-        var min_x = cropped_lines[0].data[0][0]
-        var min_y = cropped_lines[0].data[0][1]
+        var {max_x, max_y, min_x, min_y} = this.getLinesBoundaries(cropped_lines)
 
-        cropped_lines.forEach( line => {
-            line.data.sort((a,b) => a[0] <= b[0] ? -1 : 1)
-            let max_line_x = Math.max.apply(Math, line.data.map(x => x[0]))
-            let min_line_x = Math.min.apply(Math, line.data.map(x => x[0]))
-            let max_line_y = Math.max.apply(Math, line.data.map(x => x[1]))
-            let min_line_y = Math.min.apply(Math, line.data.map(x => x[1]))
-
-            if(max_line_x > max_x) max_x = max_line_x
-            if(min_line_x < min_x) min_x = min_line_x
-            if(max_line_y > max_y) max_y = max_line_y
-            if(min_line_y < min_y) min_y = min_line_y
-        })
-        console.log(max_x, min_x, max_y, min_y)
-        let delta_x = Math.abs(max_x - min_x)
-        let delta_y = Math.abs(max_y - min_y)
-
-        let multi_x = width / delta_x
-        let multi_y = height / delta_y
+        let multi_x = width / Math.abs(max_x - min_x)
+        let multi_y = height / Math.abs(max_y - min_y)
         //dessiner le graphique
         cropped_lines.forEach( line => {
             console.log(line.data)
@@ -113,6 +128,7 @@ class LineChart extends Component {
             }
         })
     }
+
 
     getLinesBoundaries(lines) {
         var max_x = lines[0].data[0][0]
@@ -135,9 +151,6 @@ class LineChart extends Component {
         return {max_x, max_y, min_x, min_y}
     }
 
-    componentWillUnmount() {
-        this.app.stop()
-    }
 
     render() {
 
