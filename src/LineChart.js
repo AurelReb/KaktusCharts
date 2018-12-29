@@ -47,10 +47,10 @@ class LineChart extends Component {
 
             if(max_line_x > max_x) max_x = max_line_x
             if(min_line_x < min_x) min_x = min_line_x
-            if(max_line_y > max_x) max_y = max_line_y
-            if(min_line_y < min_x) min_y = min_line_y
+            if(max_line_y > max_y) max_y = max_line_y
+            if(min_line_y < min_y) min_y = min_line_y
         })
-
+        console.log(max_x, min_x, max_y, min_y)
         let delta_x = Math.abs(max_x - min_x)
         let delta_y = Math.abs(max_y - min_y)
 
@@ -58,7 +58,9 @@ class LineChart extends Component {
         let multi_y = this.app.height / delta_y
         //dessiner le graphique
         this.lines.moveTo(0, this.app.height - Math.abs(lines[0].data[0][1] - min_y) * multi_y)
+        this.lines.moveTo(0, 0)
         lines.forEach( line => {
+            console.log(line.data)
             let ratio_px = this.app.width <= line.data.length ? (line.data.length - 1) / this.app.width : 1 //pour afficher 1 donnée max par px
             for (let i = 1; i < line.data.length / ratio_px; i++) {
                 let coordinates = line.data[Math.floor(i * ratio_px)]
