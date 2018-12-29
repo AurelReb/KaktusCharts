@@ -18,12 +18,12 @@ class LineChart extends Component {
     }
 
     componentDidMount() {
-        this.app = new Pixi.autoDetectRenderer(this.props.width, this.props.height, {antialias: false})
+        this.app = new Pixi.autoDetectRenderer(this.props.width, this.props.height, {antialias: true, transparent: true})
         this.gameCanvas.appendChild(this.app.view)
         this.stage = new Pixi.Container()
 
         this.setupLineChart()
-
+        this.setupTraveller()
         this.app.render(this.stage)
     }
 
@@ -31,13 +31,36 @@ class LineChart extends Component {
         let {width, color, alpha} = this.state.stroke
         this.lines = new Pixi.Graphics()
         this.lines.lineStyle(width, color, alpha)
-        this.lineChart(this.props.lines)
+        this.lineChart(0, 0, this.app.width, this.app.height * 5/6, this.props.lines)
         this.stage.addChild(this.lines)
     }
 
-    lineChart = lines => {
+    setupTraveller() {
+        let {width, color, alpha} = this.state.stroke
+        this.traveller = new Pixi.Graphics()
+        this.traveller.lineStyle(width, color, alpha)
+        this.lineChart(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, [this.props.lines[0]])
+        this.drawTraveller(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, 300, 100)
+        this.stage.addChild(this.traveller)
+    }
+
+    drawTraveller = (x, y, width, height, traveller_x, traveller_size) => {
+        this.traveller.beginFill(0xAAAAAA, 0.1);
+
+        // set the line style to have a width of 5 and set the color to red
+        this.traveller.lineStyle(3, 0x000000);
+
+        // draw a rectangle
+        this.traveller.drawRect(traveller_x, y, traveller_x, height);
+    }
+
+    lineChart = (pos_x, pos_y, width, height, lines) => {
         //setup des variables nécessaires au sizing du chart
-        var max_x = 0, max_y = 0, min_x = 0, min_y = 0
+        var max_x = lines[0].data[0][0]
+        var max_y = lines[0].data[0][1]
+        var min_x = lines[0].data[0][0]
+        var min_y = lines[0].data[0][1]
+
         lines.forEach( line => {
             line.data.sort((a,b) => a[0] <= b[0] ? -1 : 1)
             let max_line_x = Math.max.apply(Math, line.data.map(x => x[0]))
@@ -54,18 +77,19 @@ class LineChart extends Component {
         let delta_x = Math.abs(max_x - min_x)
         let delta_y = Math.abs(max_y - min_y)
 
-        let multi_x = this.app.width / delta_x
-        let multi_y = this.app.height / delta_y
+        let multi_x = width / delta_x
+        let multi_y = height / delta_y
         //dessiner le graphique
-        this.lines.moveTo(0, this.app.height - Math.abs(lines[0].data[0][1] - min_y) * multi_y)
-        this.lines.moveTo(0, 0)
         lines.forEach( line => {
             console.log(line.data)
-            let ratio_px = this.app.width <= line.data.length ? (line.data.length - 1) / this.app.width : 1 //pour afficher 1 donnée max par px
+            this.lines.moveTo(pos_x, height - Math.abs(line.data[0][1] - min_y) * multi_y + pos_y)
+            let ratio_px = width <= line.data.length ? (line.data.length - 1) / width : 1 //pour afficher 1 donnée max par px
             for (let i = 1; i < line.data.length / ratio_px; i++) {
                 let coordinates = line.data[Math.floor(i * ratio_px)]
                 let x = Math.abs(coordinates[0] - min_x) * multi_x
-                let y = this.app.height - Math.abs(coordinates[1] - min_y) * multi_y
+                let y = height - Math.abs(coordinates[1] - min_y) * multi_y
+                x += pos_x
+                y += pos_y
                 this.lines.lineTo(x, y)
             }
         })
