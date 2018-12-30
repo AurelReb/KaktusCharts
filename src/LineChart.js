@@ -46,8 +46,8 @@ class LineChart extends Component {
                         .on('mouseupoutside', () => this.onDragEnd())
                         .on('touchend', () => this.onDragEnd())
                         .on('touchendoutside', () => this.onDragEnd())
-                        .on('mousemove', () => this.onDragMove())
-                        .on('touchmove', () => this.onDragMove());
+                        .on('mousemove', () => this.onMouseMove())
+                        .on('touchmove', () => this.onMouseMove());
 
         this.lineChart(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.min_data_x, 1700123529, [this.props.lines[0], ])
         this.drawTraveller(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.display_min_x, this.state.display_max_x)
@@ -67,9 +67,14 @@ class LineChart extends Component {
 
     onDragEnd() {
         this.setState({data: null, dragging: false})
+        this.lines.clear()
+        this.lineChart(0, 0, this.app.width, this.app.height * 5/6, this.state.display_min_x, this.state.display_max_x, this.props.lines)
+        this.lineChart(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.min_data_x, 1700123529, [this.props.lines[0], ])
+        this.app.render(this.stage)
     }
 
-    onDragMove() {
+    onMouseMove() {
+        console.log("move!")
         if (this.state.dragging) {
             let newPosition = this.state.data.getLocalPosition(this.traveller).x
             if(newPosition - this.state.initial_cursor_pos > 0) {
@@ -78,13 +83,18 @@ class LineChart extends Component {
                 newPosition = 0
             }
             let multip = this.app.width / Math.abs(this.state.max_data_x - this.state.min_data_x)
-            this.setState({display_min_x: this.state.min_data_x + newPosition / multip })
-            this.setState({display_max_x: this.state.min_data_x + newPosition / multip + this.state.initial_spread })
+            console.log(multip * Math.abs(this.state.min_data_x - this.state.display_max_x), this.state.initial_cursor_pos)
+            if (this.state.initial_cursor_pos < 25) {
+                this.setState({display_min_x: this.state.max_data_x + newPosition / multip })
+            } else if (this.state.initial_cursor_pos > multip * Math.abs(this.state.min_data_x - this.state.display_max_x)) {
+
+            }else {
+                this.setState({display_min_x: this.state.min_data_x + newPosition / multip })
+                this.setState({display_max_x: this.state.min_data_x + newPosition / multip + this.state.initial_spread })
+            }
+        //    multip * Math.abs(this.state.min_data_x - to_x)
             this.traveller.clear()
-            this.lines.clear()
             this.drawTraveller(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.display_min_x, this.state.display_max_x)
-            this.lineChart(0, 0, this.app.width, this.app.height * 5/6, this.state.display_min_x, this.state.display_max_x, this.props.lines)
-            this.lineChart(0, this.app.height * 5/6, this.app.width, this.app.height * 1/6, this.state.min_data_x, 1700123529, [this.props.lines[0], ])
         }
         this.app.render(this.stage)
     }
@@ -97,10 +107,13 @@ class LineChart extends Component {
         let multip = width / Math.abs(this.state.max_data_x - this.state.min_data_x)
         // draw a rectangle
         this.traveller.drawRect(multip * Math.abs(this.state.min_data_x - from_x), y, multip * Math.abs(from_x - to_x), height);
+        //his.traveller.beginFill(0x000000, 1);
+        this.traveller.drawRect(multip * Math.abs(this.state.min_data_x - from_x), y, 25, height);
+        this.traveller.drawRect(multip * Math.abs(this.state.min_data_x - to_x), y, 25, height);
     }
 
     lineChart = (pos_x, pos_y, width, height, from_x, to_x, lines) => {
-        this.lines.lineStyle(1, 0x0000FF);
+        this.lines.lineStyle(1, 0x7cb5ec);
         //setup des variables nécessaires au sizing du chart
         let cropped_lines = lines.map(line => {
             let from_index = 0

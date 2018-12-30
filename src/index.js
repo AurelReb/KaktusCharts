@@ -5,14 +5,14 @@ import LineChart from './LineChart';
 import * as serviceWorker from './serviceWorker';
 import {randomSeries} from './serie'
 
-var data = randomSeries(123532)
+var data = randomSeries(60000)
 
 ReactDOM.render(
     <div>
         <LineChart
             lines={[
                 {data: data },
-                {data: randomSeries(123532) }
+                {data: randomSeries(60000) }
             ]}
             width={window.innerWidth}
             height={window.innerHeight}
