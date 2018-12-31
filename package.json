@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@inlet/react-pixi": "^0.4.3",
     "pixi.js": "^4.8.4",
     "react": "^16.7.0",
     "react-dom": "^16.7.0",
