@@ -14,10 +14,17 @@ class LineChart extends Component {
             min_data_x: min_x,
             display_max_x: max_x - 1/3 * (max_x - min_x),
             display_min_x: min_x + 1/3 * (max_x - min_x),
+            current_display_boundaries: {
+                max_x: null,
+                min_x: null,
+                max_y: null,
+                min_y: null
+            },
             data: null,
             dragging: false,
             initial_spread: false,
             initial_cursor_pos: null, // initial cursor position from left boundary
+            dragging_side: ""
         }
     }
 
@@ -62,7 +69,20 @@ class LineChart extends Component {
             initial_spread: this.state.display_max_x - this.state.display_min_x,
             initial_cursor_pos: event.data.getLocalPosition(this.traveller).x - multip * Math.abs(this.state.min_data_x - this.state.display_min_x)
         })
-        console.log(this.state.initial_cursor_pos)
+
+        let newPosition = event.data.getLocalPosition(this.traveller).x
+        let right_side_pos = multip * Math.abs(this.state.min_data_x - this.state.min_data_x + this.state.initial_spread) 
+        let dragging_side = ""
+        console.log(this.state.initial_cursor_pos, right_side_pos)
+        if(this.state.initial_cursor_pos < 25) {
+            dragging_side = "left"
+        } else if(this.state.initial_cursor_pos + 25 > right_side_pos) {
+            console.log("RIGHT!!:")
+            dragging_side = "right"
+        } else {
+            dragging_side = "middle"
+        }
+        this.setState({dragging_side: dragging_side})
     }
 
     onDragEnd() {
@@ -82,15 +102,19 @@ class LineChart extends Component {
             } else {
                 newPosition = 0
             }
+            console.log(newPosition)
             let multip = this.app.width / Math.abs(this.state.max_data_x - this.state.min_data_x)
-            console.log(multip * Math.abs(this.state.min_data_x - this.state.display_max_x), this.state.initial_cursor_pos)
-            if (this.state.initial_cursor_pos < 25) {
-                this.setState({display_min_x: this.state.max_data_x + newPosition / multip })
-            } else if (this.state.initial_cursor_pos > multip * Math.abs(this.state.min_data_x - this.state.display_max_x)) {
-
-            }else {
-                this.setState({display_min_x: this.state.min_data_x + newPosition / multip })
-                this.setState({display_max_x: this.state.min_data_x + newPosition / multip + this.state.initial_spread })
+            switch(this.state.dragging_side) {
+                case "left":
+                    this.setState({display_min_x: this.state.min_data_x + newPosition / multip })
+                    break
+                case "right":
+                    this.setState({display_max_x: this.state.min_data_x + this.state.data.getLocalPosition(this.traveller).x / multip })
+                    break
+                case "middle":
+                    this.setState({display_min_x: this.state.min_data_x + newPosition / multip })
+                    this.setState({display_max_x: this.state.min_data_x + newPosition / multip + this.state.initial_spread })
+                    break
             }
         //    multip * Math.abs(this.state.min_data_x - to_x)
             this.traveller.clear()
@@ -131,7 +155,7 @@ class LineChart extends Component {
             }
         })
         let {max_x, max_y, min_x, min_y} = this.getLinesBoundaries(cropped_lines)
-
+        this.setState({current_display_boundaries: {max_x, max_y, min_x, min_y}})
         let multi_x = width / Math.abs(max_x - min_x)
         let multi_y = height / Math.abs(max_y - min_y)
         //dessiner le graphique
