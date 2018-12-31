@@ -124,7 +124,7 @@ class LineChart extends Component {
                 if (line.data[i][0] <= to_x && to_x <= line.data[i+1][0])
                     to_index = i
             }
-            if(from_index != 0 && to_index != 0) {
+            if(from_index !== 0 && to_index !== 0) {
                 return {...line, data:line.data.slice(from_index, to_index)}
             } else {
                 return line
